@@ -1,60 +1,41 @@
-import { ref } from 'vue'
-import { useDateFormat } from '@vueuse/core'
+import { ref, unref, UnwrapRef } from 'vue'
 
-export function useForm() {
+export function useForm<T, k extends keyof T>(
+  initialValue: T,
+  transform?: (key: k, value: T[k]) => T[k] | undefined
+  ):{
+  getValue(key: k): T[k];
+  setValue(key: k, value: T[k]): void;
+  submit(callback: (value:T)=>void): void;
+} {
 
-  const values = ref<Values>({
-    firstName: '',
-    lastName: '',
-    email: '',
-    password: '',
-    confirmPassword: '',
-    address: '',
-    birthDate: '',
-    phoneNumber: '',
-    age: 0,
-  });
+  const values = ref<T>(initialValue);
+  const a = ref<number>(1);
+  const hoge: T =values.value;
+  function isTypeT(value: UnwrapRef<T> | T): value is T {
+    // ここに`T`であることを確認するためのロジックを実装
+    return true; // 簡単のため常にtrueを返す
+  }
 
-  const transform = <k extends keyof Values>(key: k, value: Values[k]): Values[k] => {
-    if (key === 'birthDate') {
-      // @ts-expect-error
-      return useDateFormat(value, 'YYYY-MM-DD').value;
-    }
-    return value;
+  if (isTypeT(values.value)) {
+    const hoge: T = values.value; // タイプガードによりここではTとして扱える
   }
 
   return {
-    setValue<k extends keyof Values>(key: k, value: Values[k]){
-      values.value[key] = transform(key, value);
+    getValue(key: k): T[k]{
+      if (transform){
+        const v = transform(key, (values.value as T)[key]);
+        if (v !== undefined){
+          return v;
+        }
+      }
+      return (values.value as T)[key];
     },
-    getValue<k extends keyof Values>(key: k): Values[k] {
-      return values.value[key];
+    setValue(key: k, value: T[k]){
+      (values.value as T)[key] = value;
     },
-    submit(requestFunc:(values: Values)=>void) {
-      requestFunc(values.value);
-    },
-    setInitialValues(initialValues: Partial<APIProps>) {
-      if (initialValues.first_name !== undefined) {
-        values.value.firstName = initialValues.first_name;
-      }
-      if (initialValues.last_name !== undefined) {
-        values.value.lastName = initialValues.last_name;
-      }
-      if (initialValues.email !== undefined) {
-        values.value.email = initialValues.email;
-      }
-      if (initialValues.address !== undefined) {
-        values.value.address = initialValues.address;
-      }
-      if (initialValues.birth_date !== undefined) {
-        values.value.birthDate = initialValues.birth_date;
-      }
-      if (initialValues.phone_number !== undefined) {
-        values.value.phoneNumber = initialValues.phone_number;
-      }
-      if (initialValues.age !== undefined) {
-        values.value.age = initialValues.age;
-      }
+    submit(callback: (value: T) => void) {
+      callback(unref<T>(values));
     }
   }
 }
@@ -66,17 +47,5 @@ export type APIProps = {
   address: string;
   birth_date: string;
   phone_number: string;
-  age: number;
-}
-
-export type Values = {
-  firstName: string;
-  lastName: string;
-  email: string;
-  password: string;
-  confirmPassword: string;
-  address: string;
-  birthDate: string;
-  phoneNumber: string;
   age: number;
 }

@@ -13,8 +13,36 @@
 
 <script setup lang="ts">
 import { useForm } from '@/UserRegisterForm/layer'
+import { useDateFormat } from '@vueuse/core'
 
-const layer = useForm()
+type Values = {
+  firstName: string;
+  lastName: string;
+  email: string;
+  password: string;
+  confirmPassword: string;
+  address: string;
+  birthDate: string;
+  phoneNumber: string;
+  age: number;
+}
+
+interface MyFormValues {
+  name: string;
+  email: string;
+}
+
+
+const transformUpperCase = <k extends keyof MyFormValues>(
+  key: k,
+  value: MyFormValues[k]
+): MyFormValues[k] | undefined => {
+  if (key === 'name') {
+    return value.toUpperCase() as MyFormValues[k];
+  }
+};
+
+const layer = useForm<MyFormValues>(undefined, transformUpperCase)
 </script>
 
 <style scoped>
